@@ -1,15 +1,16 @@
-let searchBox       = document.querySelector('.search');
 let autocompleteBox = document.querySelector('.search-autocomplete');
 let searchFormInput = document.querySelector('.search-form-input');
 let resultBox       = document.querySelector('.result');
+
+let gitHubURL = 'https://api.github.com/search/repositories?q=';
 
 searchInputHandler  = debounce(searchInputHandler, 500);
 searchFormInput.addEventListener('input', searchInputHandler);
 
 function searchInputHandler(event){
   clearResultField();
-  
-  if(event.data !== null || event.inputType === 'insertFromPaste' || event.inputType ==='deleteContentBackward' && searchFormInput.value !== '' ){
+
+  if( (event.data !== null) || (event.inputType === 'insertFromPaste') || (event.inputType ==='deleteContentBackward' && searchFormInput.value !== '') ){
 
     let arrOfResult = getInfo(searchFormInput.value);
 
@@ -27,31 +28,25 @@ function searchInputHandler(event){
 }
 
 function pickResultHandler(event){
-  let selectedItem = event.target;
-  addClickedItem(selectedItem);
+  addClickedItem(event.target);
 
   clearResultField();
   searchFormInput.value = '';
 }
 
 function addResultString(data){
-  let resultString = makeResultString(data);
-  autocompleteBox.append(resultString);
+  autocompleteBox.append(makeResultString(data));
 }
 
 function closeBtnHandler(event){
-  let ourBtn = event.target;
-  let ourDivParent = ourBtn.closest('.result-message');
-
+  let ourDivParent = event.target.closest('.result-message');
   ourDivParent.remove();
 }
 
 function makeResultString(data){
-  let text = data.name;
-
   let div = document.createElement('div');
   div.className = 'fast-result';
-  div.innerHTML = text;
+  div.innerHTML = data.name;
 
   div.dataset.fullName = data.full_name;
   div.dataset.owner = data.owner.login;
@@ -71,10 +66,6 @@ function clearResultField(){
 }
 
 function addClickedItem(item){
-  let name = item.dataset.fullName;
-  let owner = item.dataset.owner
-  let starsCount = item.dataset.starsCount;
-
   let divParent = document.createElement('div');
   divParent.className = 'result-message';
 
@@ -86,15 +77,15 @@ function addClickedItem(item){
     <tbody>
       <tr>
         <td>Name: </td>
-        <td>${name} </td>
+        <td>${item.dataset.fullName} </td>
       </tr>
       <tr>
         <td>Owner: </td>
-        <td>${owner} </td>
+        <td>${item.dataset.owner} </td>
       </tr>
       <tr>
         <td>Stars:</td>
-        <td>${starsCount} </td>
+        <td>${item.dataset.starsCount} </td>
       </tr>
     </tbody>
   </table>
@@ -121,17 +112,15 @@ function addClickedItem(item){
   resultBox.append(divParent);
 }
 
-async function getInfo(text){
-  let url = `https://api.github.com/search/repositories?q=${text}`;
-  let response = await fetch(url);
+async function getInfo(queryText){
+  let response = await fetch(gitHubURL + queryText);
 
   if(!response.ok){
     console.log('we got a problem');
     return 0;
   }
 
-  let data = await response.json();
-  let arrOfResult = data.items;
+  let {items: arrOfResult} = await response.json();
 
   if(arrOfResult.length === 0){
     return 0;
